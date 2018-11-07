@@ -188,7 +188,7 @@ from (
     SUM(sc.s_score) as s_c_sum
   FROM Score as sc
   GROUP BY sc.s_id
-) as t 
+) as t
 join Student as st
 on t.s_id = st.s_id
 ```
