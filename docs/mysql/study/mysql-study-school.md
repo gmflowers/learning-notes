@@ -153,4 +153,39 @@ on a.c_id = b.c_id
 ```
 select c_id, count(c_id) from Score where s_score > 60 group by c_id  
 ```
+## 查询所有同学的学生编号、学生姓名、选课总数、所有课程的总成绩
+分析：每个同学的编号，每个同学的姓名，每个同学的选课总数，每个同学的总成绩。
+```
+SELECT sc.s_id, st.s_name, COUNT(sc.c_id),SUM(sc.s_score)
+from Score as sc
+JOIN Student as st
+on sc.s_id = st.s_id
+GROUP BY sc.s_id,st.s_name
+```
+### 第一步：from Score as sc 
+查询成绩表，重命名为sc  
 
+### 第二步：join Student as st  
+Score成绩表与Student学生表关联  
+
+### 第三步：GROUP BY sc.s_id,st.s_name
+按照成绩表的学生ID和学生表的学生姓名分组。学生ID和姓名为一一对应关系。
+
+### 第四步：SELECT sc.s_id, st.s_name, COUNT(sc.c_id),SUM(sc.s_score) 
+获取sc.s_id, st.s_name, COUNT(sc.c_id),SUM(sc.s_score) 每个字段信息。
+
+### 第二种算法：先算出结果，后join姓名。
+```
+select t.s_id, s_name, t.s_c_cnt, t.s_c_sum
+from 
+(
+		SELECT 
+			sc.s_id as s_id, 
+			COUNT(sc.c_id) as s_c_cnt, 
+			SUM(sc.s_score) as s_c_sum
+		FROM Score as sc
+		GROUP BY sc.s_id
+	) as t 
+join Student as st
+on t.s_id = st.s_id
+```
