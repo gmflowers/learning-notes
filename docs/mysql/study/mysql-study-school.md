@@ -30,8 +30,50 @@ select s_sex, count(s_sex) as 人数 from Student GROUP BY s_sex
 
 ```
 ## 查询1990年出生的学生名单  
+```
+select s_name FROM Student WHERE s_birth like '1990%'  
 
+输出：
+s_name  
+赵雷  
+钱电  
+孙风  
+李云  
+王菊  
+
+```
 ## 查询每门课程的学生人数  
+```
+SELECT c_id, COUNT(s_id) as 人数 
+FROM (
+	select 
+		s.s_id as s_id,
+		s.c_id as c_id,
+		s.s_score as s_score,
+		c.c_name as c_name,
+		c.t_id as t_id
+FROM Score as s
+join Course as c
+on s.c_id = c.c_id
+) as t
+GROUP BY c_id
+
+输出：
+c_id
+01
+02
+03
+人数
+6
+6
+6
+```
+### 注意：子查询（当一个查询是另一个查询的条件时，称之为子查询。） join的表需要重新命名，如果不命名会出现错误
+``` 
+Every derived table must have its own alias
+
+# -每个派生表都必须有自己的别名
+```
 
 ## 查询每门课程成绩大于60的数量  
 ```
@@ -84,15 +126,16 @@ where s_score > 60
 将join得到的表，临时命名为t，查询表 t 中成绩大于60的字段。  
 
 ### 第四步： 
-``` 
-select c_id, c_name, count(c_id)  
-···  
-···  
+```  
 group by c_id 
 ``` 
-按照 c_id 分组，获取 c_id, c_name, count(c_id)字段信息。   
+按照 c_id 分组  
 
-
+### 第五步：
+```
+select c_id, c_name, count(c_id)
+```
+获取 c_id, c_name, count(c_id)字段信息。
 
 ### 其他查询方法1：
 ```
