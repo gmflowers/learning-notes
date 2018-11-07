@@ -174,6 +174,7 @@ Score成绩表与Student学生表关联
 4. SELECT sc.s_id, st.s_name, COUNT(sc.c_id),SUM(sc.s_score)  
 获取sc.s_id, st.s_name, COUNT(sc.c_id),SUM(sc.s_score) 每个字段信息。
 
+<<<<<<< HEAD
 ### 第二种算法：先算出结果，后join姓名。
 ```sql
 select t.s_id, s_name, t.s_c_cnt, t.s_c_sum
@@ -186,6 +187,23 @@ from
 FROM Score as sc
 GROUP BY sc.s_id
 	) as t 
+=======
+### 第二种写法：先算出结果，后join姓名。
+```sql
+select 
+  t.s_id as s_id, 
+  st.s_name as s_name, 
+  t.s_c_cnt as s_c_cnt, 
+  t.s_c_sum as s_c_sum
+from (
+  SELECT 
+    sc.s_id as s_id, 
+    COUNT(sc.c_id) as s_c_cnt, 
+    SUM(sc.s_score) as s_c_sum
+  FROM Score as sc
+  GROUP BY sc.s_id
+) as t 
+>>>>>>> bca0d32c23483e3d7308c6f0527e1f30aa4b553e
 join Student as st
 on t.s_id = st.s_id
 ```
