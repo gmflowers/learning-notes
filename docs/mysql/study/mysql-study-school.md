@@ -192,3 +192,171 @@ from (
 join Student as st
 on t.s_id = st.s_id
 ```
+## 查询平均成绩大于等于60分的同学的学生编号和学生姓名和平均成绩
+```sql
+SELECT
+	sc.s_id as s_id, 
+	st.s_name, 
+	ROUND(AVG(sc.s_score),2) as s_score
+FROM Score as sc
+JOIN Student as st
+	on sc.s_id = st.s_id 
+GROUP BY st.s_name, sc.s_id 
+HAVING ROUND(AVG(sc.s_score), 2) >= 60 
+ORDER BY sc.s_id
+```
+1. FROM Score as sc  
+JOIN Student as st  
+查询 Score 和 Student 表  
+
+2. JOIN Student as st  
+	on sc.s_id = st.s_id   
+当sc.s_id 相等于 st.s_id 相等时，join 表Score 和 表Student，并且重命名为sc,st。
+
+3. GROUP BY st.s_name, sc.s_id   
+按st表姓名及sc表学生ID（一对一关系） 分组。
+
+4. HAVING ROUND(AVG(sc.s_score), 2) >= 60   
+注意：HAVING语句通常与GROUP BY语句联合使用，用来过滤由GROUP BY语句返回的记录集。筛选出成绩平均分大于等于60的。
+
+5. SELECT  
+	sc.s_id as s_id,   
+	st.s_name,   
+	ROUND(AVG(sc.s_score),2) as s_score  
+获取 sc.s_id， st.s_name, ROUND(AVG(sc.s_score),2)   
+
+6. ORDER BY sc.s_id  
+对 sc.s_id 排序（默认正序）  
+
+## 查询学过"张三"老师授课的同学的信息
+```sql
+SELECT st.*
+FROM Student as st
+JOIN Score as sc
+on st.s_id = sc.s_id
+WHERE sc.c_id 
+in (
+SELECT c_id FROM Course WHERE t_id =(
+SELECT t_id from Teacher WHERE t_name = '张三'))
+```
+1. 
+```
+SELECT st.*  
+FROM Student as st  
+JOIN Score as sc  
+on st.s_id = sc.s_id  
+与
+ SELECT c_id FROM Course WHERE t_id =(  
+SELECT t_id from Teacher WHERE t_name = '张三')  
+同时进行，查询获取
+```
+2. 
+```
+WHERE sc.c_id   
+in (  
+当 sc.c_id 与 in 里的字段相同时，得出结果
+```
+注意：IN 操作符允许我们在 WHERE 子句中规定多个值  
+```
+SELECT column_name(s)
+FROM table_name
+WHERE column_name 
+IN (value1,value2,...)
+```
+
+### 我写的（最差的写法）
+想法：表Student 和 表Score先join，取出其中所要字段，然后和 表Course join，取出其中需要字段，最后和 表Teacher join，获取需要字段，加上需要的条件。
+```sql
+SELECT 
+	-- te.t_name,
+  f.s_id, 
+	f.s_name,
+	f.s_birth,
+	f.s_sex, 
+	f.c_id,
+	f.s_score 
+FROM(
+SELECT  
+  cor.t_id, 
+	t.s_id, 
+	t.s_name,
+	t.s_birth,
+	t.s_sex, 
+	t.c_id,
+	t.s_score 
+from (
+SELECT 
+	sc.s_id as s_id, 
+	st.s_name as s_name,
+	st.s_birth as s_birth,
+	st.s_sex as s_sex,
+	sc.c_id as c_id,
+	sc.s_score as s_score 
+FROM Student as st
+JOIN Score as sc
+on st.s_id = sc.s_id
+)as t
+join Course as cor
+on cor.c_id = t.c_id
+)as f
+join Teacher as te
+on te.t_id = f.t_id
+WHERE te.t_name = '张三'
+```
+
+### 王扬庭写的
+
+1. 第一种写法(最好写法)
+想法：直接join四张表，逻辑强，不会混乱。  
+```sql
+select 
+	st.s_id, 
+	st.s_name,
+	st.s_birth,
+	st.s_sex, 
+	co.c_name,
+	sc.s_score 
+from Student as st
+join Score as sc
+	on st.s_id = sc.s_id
+join Course as co
+	on co.c_id = sc.c_id
+join Teacher as te
+  on te.t_id = co.t_id
+where te.t_name = '张三'
+```
+
+2. 第二种写法（逻辑不是很清楚）
+```sql
+select 
+	st.s_id, 
+	st.s_name,
+	st.s_birth,
+	st.s_sex, 
+	co.c_name,
+	sc.s_score 
+from Student as st, Score as sc, Course as co, Teacher as te
+where st.s_id = sc.s_id 
+	and co.c_id = sc.c_id
+	and	te.t_id = co.t_id
+  and te.t_name = '张三'
+```
+## 查询没学过"张三"老师授课的同学的信息
+
+```sql
+select 
+	st.s_id, 
+	st.s_name,
+	st.s_birth,
+	st.s_sex, 
+	co.c_name,
+	sc.s_score 
+from Student as st
+join Score as sc
+	on st.s_id = sc.s_id
+join Course as co
+	on co.c_id = sc.c_id
+join Teacher as te
+  on te.t_id = co.t_id
+where te.t_name != '张三'
+```
