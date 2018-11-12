@@ -120,23 +120,50 @@ select * FROM Teacher
 
 # 练习题
 
-1. 查询" 01 "课程比" 02 "课程成绩高的学生的信息及课程分数  
+## 查询" 01 "课程比" 02 "课程成绩高的学生的信息及课程分数  
 1.1  查询同时存在" 01 "课程和" 02 "课程的情况
 
 1.2  查询存在" 01 "课程但可能不存在" 02 "课程的情况(不存在时显示为 null )
 
 1.3  查询不存在" 01 "课程但存在" 02 "课程的情况
 
-2. 查询平均成绩大于等于 60 分的同学的学生编号和学生姓名和平均成绩
+## 查询平均成绩大于等于 60 分的同学的学生编号和学生姓名和平均成绩
+```sql
+SELECT 
+  sc.s_id as s_id,
+  st.s_name as s_name,
+  ROUND(AVG(sc.s_score),2) as s_score
+FROM Score as sc
+JOIN Student as st
+  on sc.s_id = st.s_id
+GROUP BY sc.s_id, st.s_name
+HAVING ROUND(AVG(sc.s_score),2) >= 60
+ORDER BY sc.s_id
+```
+意思：每个学生的平均成绩大于等于60，就获取他的学生信息。  
+思路：
+1. FROM Score as sc  
+JOIN Student as st  
+查询 Score 和 Student 表  
+
+2. JOIN Student as st  
+	on sc.s_id = st.s_id   
+当sc.s_id 相等于 st.s_id 相等时，join 表Score 和 表Student，并且重命名为sc,st。
+
+3. GROUP BY st.s_name, sc.s_id   
+按st表姓名及sc表学生ID（一对一关系） 分组。
+
+4. HAVING ROUND(AVG(sc.s_score), 2) >= 60   
+注意：HAVING语句通常与GROUP BY语句联合使用，用来过滤由GROUP BY语句返回的记录集。筛选出成绩平均分大于等于60的。
 
 ## 查询在 Score 表存在成绩的学生信息
 ```sql
 select 
-  st.s_id as s_id, 
-  st.s_name as s_name, 
-  st.s_birth as s_birth, 
-  st.s_sex as s_sex,
-  t.s_score
+ st.s_id as s_id, 
+ st.s_name as s_name, 
+ st.s_birth as s_birth, 
+ st.s_sex as s_sex,
+ t.s_score
 FROM(
   SELECT 
   s_id,  
@@ -186,7 +213,7 @@ select
 FROM(
   SELECT 
   s_id,  
-	COUNT(c_id) as c_id, 
+  COUNT(c_id) as c_id, 
   sum(s_score) as s_score
   FROM Score 
   GROUP BY s_id
@@ -195,9 +222,57 @@ RIGHT join Student as st
   on t.s_id = st.s_id 
 ```
 
-3. 查询「李」姓老师的数量
+## 查询「李」姓老师的数量
+```sql
+SELECT 
+  COUNT(t_name) as t_n_cnt
+FROM Teacher
+WHERE t_name LIKE '李%'
+```
 
-查询学过「张三」老师授课的同学的信息
+## 查询学过「张三」老师授课的同学的信息
+第一种做法：  
+```sql
+SELECT 
+  st.s_id as s_id, 
+  st.s_name as s_name,
+  st.s_birth as s_birth,
+  st.s_sex as s_sex,  
+  co.c_name as c_name, 
+sc.s_score as s_score
+FROM Score as sc 
+JOIN Course as co
+  ON co.c_id = sc.c_id 
+JOIN Student as st
+  ON sc.s_id = st.s_id
+join Teacher as te
+  ON te.t_id = co.t_id
+WHERE te.t_name = '张三'
+```
+
+第二种做法：  
+```sql
+select
+  t.s_id as s_id,
+  st.s_name as s_name,
+  st.s_sex as s_sex,
+  st.s_birth as s_birth
+from (
+	-- 获取 张三 老师下的 s_id（学生编号），并且去重
+SELECT 
+  sc.s_id as s_id
+FROM Score as sc 
+JOIN Course as co
+  ON co.c_id = sc.c_id
+join Teacher as te
+  ON te.t_id = co.t_id
+WHERE te.t_name = '张三'
+GROUP BY sc.s_id
+) as t
+join Student as st
+  on t.s_id = st.s_id
+```
+想法：得到张三老师下学生 id，去join学生表，得到需要的信息。  
 
 查询没有学全所有课程的同学的信息
 
@@ -205,16 +280,46 @@ RIGHT join Student as st
 
 查询和" 01 "号的同学学习的课程 完全相同的其他同学的信息
 
-查询没学过"张三"老师讲授的任一门课程的学生姓名
+## 查询没学过"张三"老师讲授的任一门课程的学生姓名
 
 查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
 
-检索" 01 "课程分数小于 60，按分数降序排列的学生信息
+## 检索" 01 "课程分数小于 60，按分数降序排列的学生信息
+```sql
+SELECT 
+  st.s_id,
+  t.s_score,
+  st.s_name,
+  st.s_birth,
+  st.s_sex
+FROM(
+-- 01课程小于60的学生ID
+  SELECT 
+    sc.s_id as s_id,
+    sc.s_score as s_score
+  FROM Score as sc
+  JOIN Course as co
+    on sc.c_id = co.c_id
+  WHERE sc.c_id = '01' AND s_score < 60
+)as t
+join Student as st
+  ON t.s_id = st.s_id
+ORDER BY t.s_score DESC
+```
 
 按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
 
-### 查询各科成绩最高分、最低分和平均分
+## 查询各科成绩最高分、最低分和平均分
 ```sql
+SELECT 
+  sc.c_id as c_id,
+  MAX(s_score) as s_sc_max,
+  MIN(s_score) as s_sc_min,
+  ROUND(AVG(s_score),2) as s_sc_avg
+FROM Score as sc
+join Course as co
+  on sc.c_id = co.c_id
+GROUP BY sc.c_id
 
 ```
 
