@@ -118,7 +118,7 @@ select * FROM Teacher
 5. 确定数据没有问题，开始练习。  
 
 
-## 练习题
+# 练习题
 
 1. 查询" 01 "课程比" 02 "课程成绩高的学生的信息及课程分数  
 1.1  查询同时存在" 01 "课程和" 02 "课程的情况
@@ -174,12 +174,28 @@ WHERE sc.s_score IS null
 2. 当成绩表中 s_score 为 null 时
 3. 获取s_id, s_name, s_birth, s_sex, s_score 字段信息。
 
+## 查询所有同学的学生编号、学生姓名、选课总数、所有课程的总成绩(没成绩的显示为 null )
+```sql
+select 
+  st.s_id as s_id, 
+  st.s_name as s_name, 
+  st.s_birth as s_birth, 
+  st.s_sex as s_sex,
+  t.s_score,
+	t.c_id 
+FROM(
+  SELECT 
+  s_id,  
+	COUNT(c_id) as c_id, 
+  sum(s_score) as s_score
+  FROM Score 
+  GROUP BY s_id
+) as t
+RIGHT join Student as st
+  on t.s_id = st.s_id 
+```
 
-查询所有同学的学生编号、学生姓名、选课总数、所有课程的总成绩(没成绩的显示为 null )
-
-4.1 查有成绩的学生信息
-
-查询「李」姓老师的数量
+3. 查询「李」姓老师的数量
 
 查询学过「张三」老师授课的同学的信息
 
