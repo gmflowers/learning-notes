@@ -274,14 +274,56 @@ join Student as st
 ```
 想法：得到张三老师下学生 id，去join学生表，得到需要的信息。  
 
-查询没有学全所有课程的同学的信息
+## 查询没有学全所有课程的同学的信息
+```sql
+SELECT 
+  st.s_id,
+  st.s_name,
+  st.s_birth,
+  st.s_sex
+FROM (
+	SELECT 
+  -- 得到没有学全所有课程的学生id和课程数
+	  sc.s_id,
+	  COUNT(sc.c_id) as c_id_cnt
+	FROM Score as sc
+	GROUP BY sc.s_id
+	HAVING COUNT(sc.c_id) < (
+	  SELECT COUNT(c_id) FROM Course
+	)
+) as t
+join Student as st 
+on st.s_id = t.s_id 
+```
+思路：求出每个学生有几门课程，和总课程相比较，当学生课程数小于总课程数则获取他的s_id和学了几门课程数，最后和学生表join，等到学生信息。  
 
-查询至少有一门课与学号为" 01 "的同学所学相同的同学的信息
+## 查询至少有一门课与学号为" 01 "的同学所学相同的同学的信息
 
 查询和" 01 "号的同学学习的课程 完全相同的其他同学的信息
 
 ## 查询没学过"张三"老师讲授的任一门课程的学生姓名
-
+```sql
+SELECT
+  st.s_id,
+  st.s_name,
+  st.s_birth,
+  st.s_sex
+FROM (
+	SELECT
+  -- 获取 张三 老师下的 s_id（学生编号），并且去重
+		sc.s_id
+	FROM Score AS sc
+	JOIN Course AS co
+		ON sc.c_id = co.c_id 
+	JOIN Teacher as te
+		ON te.t_id = co.t_id
+	WHERE te.t_name = '张三'
+	GROUP BY sc.s_id
+) AS t
+RIGHT JOIN Student AS st
+ ON st.s_id = t.s_id
+WHERE t.s_id IS NULL
+```
 查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
 
 ## 检索" 01 "课程分数小于 60，按分数降序排列的学生信息
@@ -307,7 +349,20 @@ join Student as st
 ORDER BY t.s_score DESC
 ```
 
-按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
+## 按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩(没解决完)
+```SQL
+SELECT *
+FROM (
+	SELECT 
+		sc.s_id as s_id,
+		ROUND(AVG(sc.s_score),2) as s_score_avg
+	FROM Score as sc
+	GROUP BY sc.s_id
+) as t
+JOIN Student as st
+  ON t.s_id = st.s_id
+ORDER BY t.s_score_avg DESC
+```
 
 ## 查询各科成绩最高分、最低分和平均分
 ```sql
@@ -339,14 +394,47 @@ GROUP BY sc.c_id
 
 查询各科成绩前三名的记录
 
-查询每门课程被选修的学生数
+## 查询每门课程被选修的学生数
+```sql
+SELECT 
+  c_id,
+  COUNT(s_id) as s_id_cnt
+FROM 
+Score
+GROUP BY c_id
+```
 
-查询出只选修两门课程的学生学号和姓名
-
+## 查询出只选修两门课程的学生学号和姓名
+```sql
+SELECT 
+  st.s_id,
+  st.s_name,
+  st.s_birth,
+  st.s_sex
+FROM (
+	SELECT
+		s_id,
+		COUNT(c_id) as c_id_cnt
+	FROM Score 
+	GROUP BY s_id
+	HAVING COUNT(c_id) = 2
+) as t
+JOIN Student as st
+  ON st.s_id = t.s_id
+```
 查询男生、女生人数
-
+```sql
+SELECT 
+  s_sex,
+  COUNT(s_sex) as s_sex_cnt
+FROM
+Student
+GROUP BY s_sex
+```
 查询名字中含有「风」字的学生信息
-
+```sql
+SELECT s_name FROM Student WHERE s_name like '%风%'
+```
 查询同名同性学生名单，并统计同名人数
 
 查询 1990 年出生的学生名单
