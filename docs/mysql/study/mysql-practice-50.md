@@ -352,69 +352,73 @@ ORDER BY t.s_score DESC
 ## 按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
 ```SQL
 SELECT
-	s_id,
-	sum(case when c_id = '01' then s_score ELSE 0 end) as 语文,
-	sum(case when c_id = '02' then s_score ELSE 0 end) as 数学,
-	sum(case when c_id = '03' then s_score ELSE 0 end) as 外语,
+  s_id,
+  -- 每门课成绩
+  sum(case when c_id = '01' then s_score ELSE 0 end) as 语文,
+  sum(case when c_id = '02' then s_score ELSE 0 end) as 数学,
+  sum(case when c_id = '03' then s_score ELSE 0 end) as 外语,
   ROUND(AVG(s_score),2) as 平均成绩
 FROM Score 
 GROUP BY s_id 
 ORDER BY ROUND(AVG(s_score),2) DESC
-
--- 每门课成绩
-	SELECT
-		s_id,
-		sum(case when c_id = '01' then s_score end) 语文,
-		sum(case when c_id = '02' then s_score end) 数学,
-		sum(case when c_id = '03' then s_score end) 外语
-	FROM Score 
-	GROUP BY s_id 
 ```
-## 原始数据是
+目标：
+1. 查询 Score 表
+2. 通过 GROUP BY s_id ，对学生 id 进行分组，由原来的一个学生对于三条信息，转换为一个学生一条信息
+3. 获取学生 id
+4. case when 条件 then 结果 else 0 end  意思是当满足条件时，显示结果，不满足则显示为0（默认不满足条件显示为null），结束
+5. sum 聚合函数 SUM(col)返回指定列的所有值之和。如果出现一个学生同一门课程考试两次，sum对指定的进行求和，数据显示出来会出现不符合实际的情况。假如满分是100分，最后显示出某一位同学成绩大于100，则有问题，使用 sum 可以帮助发现问题。
 
-![](learning-notes/docs/mysql/study/image/mysql-study-practice-1.png)
+## 原始数据是
+![](image/mysql-study-practice-1.png)
+### 转化完的数据
+![](image/mysql-study-practice-2.png)
 ## 列转行
 ```sql
 SELECT
-	t.s_id,
+  t.s_id,
   '01' as c_id,
-  yw
+  yw as s_score
+-- 查询学生01-07的语文课程
 FROM (
-	SELECT
-		s_id,
-		sum(case when c_id = '01' then s_score end) yw,
-		sum(case when c_id = '02' then s_score end) sx,
-		sum(case when c_id = '03' then s_score end) eng
-	FROM Score 
-	GROUP BY s_id  
+  -- 这个练习只有一个 t 表
+  SELECT
+    s_id,
+    sum(case when c_id = '01' then s_score ELSE 0 end) yw,
+    sum(case when c_id = '02' then s_score ELSE 0 end) sx,
+    sum(case when c_id = '03' then s_score ELSE 0 end) eng
+  FROM Score 
+  GROUP BY s_id  
 ) as t
 UNION ALL
 SELECT
-	t.s_id,
- '02' as c_id,
+  t.s_id,
+  '02' as c_id,
   sx
+-- 查询学生01-07的数学课程
 FROM (
-	SELECT
-		s_id,
-		sum(case when c_id = '01' then s_score end) yw,
-		sum(case when c_id = '02' then s_score end) sx,
-		sum(case when c_id = '03' then s_score end) eng
-	FROM Score 
-	GROUP BY s_id  
+ SELECT
+    s_id,
+    sum(case when c_id = '01' then s_score ELSE 0 end) yw,
+    sum(case when c_id = '02' then s_score ELSE 0 end) sx,
+    sum(case when c_id = '03' then s_score ELSE 0 end) eng
+  FROM Score 
+  GROUP BY s_id   
 ) as t
 UNION ALL
 SELECT
-	t.s_id,
- '03' as c_id,
+  t.s_id,
+  '03' as c_id,
   eng
+-- 查询学生01-07的英语课程
 FROM (
-	SELECT
-		s_id,
-		sum(case when c_id = '01' then s_score end) yw,
-		sum(case when c_id = '02' then s_score end) sx,
-		sum(case when c_id = '03' then s_score end) eng
-	FROM Score 
-	GROUP BY s_id  
+	 SELECT
+    s_id,
+    sum(case when c_id = '01' then s_score ELSE 0 end) yw,
+    sum(case when c_id = '02' then s_score ELSE 0 end) sx,
+    sum(case when c_id = '03' then s_score ELSE 0 end) eng
+  FROM Score 
+  GROUP BY s_id  
 ) as t
 ORDER BY s_id
 ```
@@ -430,7 +434,6 @@ FROM Score as sc
 join Course as co
   on sc.c_id = co.c_id
 GROUP BY sc.c_id
-
 ```
 
 以如下形式显示：课程 ID，课程 name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率
