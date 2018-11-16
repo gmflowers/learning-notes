@@ -349,19 +349,74 @@ join Student as st
 ORDER BY t.s_score DESC
 ```
 
-## 按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩(没解决完)
+## 按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
 ```SQL
-SELECT *
+SELECT
+	s_id,
+	sum(case when c_id = '01' then s_score ELSE 0 end) as 语文,
+	sum(case when c_id = '02' then s_score ELSE 0 end) as 数学,
+	sum(case when c_id = '03' then s_score ELSE 0 end) as 外语,
+  ROUND(AVG(s_score),2) as 平均成绩
+FROM Score 
+GROUP BY s_id 
+ORDER BY ROUND(AVG(s_score),2) DESC
+
+-- 每门课成绩
+	SELECT
+		s_id,
+		sum(case when c_id = '01' then s_score end) 语文,
+		sum(case when c_id = '02' then s_score end) 数学,
+		sum(case when c_id = '03' then s_score end) 外语
+	FROM Score 
+	GROUP BY s_id 
+```
+## 原始数据是
+
+![](learning-notes/docs/mysql/study/image/mysql-study-practice-1.png)
+## 列转行
+```sql
+SELECT
+	t.s_id,
+  '01' as c_id,
+  yw
 FROM (
-	SELECT 
-		sc.s_id as s_id,
-		ROUND(AVG(sc.s_score),2) as s_score_avg
-	FROM Score as sc
-	GROUP BY sc.s_id
+	SELECT
+		s_id,
+		sum(case when c_id = '01' then s_score end) yw,
+		sum(case when c_id = '02' then s_score end) sx,
+		sum(case when c_id = '03' then s_score end) eng
+	FROM Score 
+	GROUP BY s_id  
 ) as t
-JOIN Student as st
-  ON t.s_id = st.s_id
-ORDER BY t.s_score_avg DESC
+UNION ALL
+SELECT
+	t.s_id,
+ '02' as c_id,
+  sx
+FROM (
+	SELECT
+		s_id,
+		sum(case when c_id = '01' then s_score end) yw,
+		sum(case when c_id = '02' then s_score end) sx,
+		sum(case when c_id = '03' then s_score end) eng
+	FROM Score 
+	GROUP BY s_id  
+) as t
+UNION ALL
+SELECT
+	t.s_id,
+ '03' as c_id,
+  eng
+FROM (
+	SELECT
+		s_id,
+		sum(case when c_id = '01' then s_score end) yw,
+		sum(case when c_id = '02' then s_score end) sx,
+		sum(case when c_id = '03' then s_score end) eng
+	FROM Score 
+	GROUP BY s_id  
+) as t
+ORDER BY s_id
 ```
 
 ## 查询各科成绩最高分、最低分和平均分
@@ -483,3 +538,20 @@ SELECT s_name FROM Student WHERE s_name like '%风%'
 
 ## 参考
 https://www.jianshu.com/p/476b52ee4f1b
+```sql
+SELECT
+	max(语文),
+	MAX(数学),
+  MAX(外语),
+  AVG(语文),
+  SUM(外语)
+from(
+	SELECT
+		s_id,
+		sum(case when c_id = '01' then s_score else 0 end) 语文,
+		sum(case when c_id = '02' then s_score else 0 end) 数学,
+		sum(case when c_id = '03' then s_score else 0 end) 外语
+	FROM Score 
+	GROUP BY s_id  
+) as t
+```
