@@ -121,13 +121,55 @@ select * FROM Teacher
 # 练习题
 
 ## 查询" 01 "课程比" 02 "课程成绩高的学生的信息及课程分数  
-1.1  查询同时存在" 01 "课程和" 02 "课程的情况
+```sql
+SELECT
+  st.*,
+  t.01_course,
+  t.02_course
+FROM (
+SELECT 
+-- 查出01课程与02课程的全部成绩
+ s_id,
+  SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) AS 01_course,
+  SUM(CASE WHEN c_id = '02' THEN s_score ELSE 0 END) AS 02_course
+FROM Score
+GROUP BY s_id
+) AS t
+JOIN Student AS st
+  ON st.s_id = t.s_id
+WHERE t.01_course > t.02_course
+```
+## 查询同时存在" 01 "课程和" 02 "课程的情况
+```sql
+SELECT
+  *
+FROM (
+SELECT 
+ s_id,
+  SUM(CASE WHEN c_id = '01' THEN s_score END) AS 01_course,
+  SUM(CASE WHEN c_id = '02' THEN s_score END) AS 02_course
+FROM Score
+GROUP BY s_id
+) AS t
+WHERE 01_course IS not NULL AND 02_course IS not NULL
+```
 
-1.2  查询存在" 01 "课程但可能不存在" 02 "课程的情况(不存在时显示为 null )
-
-1.3  查询不存在" 01 "课程但存在" 02 "课程的情况
-
+## 查询存在" 01 "课程但可能不存在" 02 "课程的情况(不存在时显示为 null )
+```sql
+SELECT
+  *
+FROM (
+SELECT 
+ s_id,
+  SUM(CASE WHEN c_id = '01' THEN s_score END) AS 01_course,
+  SUM(CASE WHEN c_id = '02' THEN s_score END) AS 02_course
+FROM Score
+GROUP BY s_id
+) AS t
+WHERE 01_course IS not NULL 
+```
 ## 查询平均成绩大于等于 60 分的同学的学生编号和学生姓名和平均成绩
+第一种做法：
 ```sql
 SELECT 
   sc.s_id as s_id,
@@ -156,6 +198,23 @@ JOIN Student as st
 4. HAVING ROUND(AVG(sc.s_score), 2) >= 60   
 注意：HAVING语句通常与GROUP BY语句联合使用，用来过滤由GROUP BY语句返回的记录集。筛选出成绩平均分大于等于60的。
 
+第二种做法：
+```sql
+SELECT 
+  st.*,
+  t.`平均成绩`
+FROM (
+SELECT 
+-- 查询成绩大于60的学生ID及平均成绩
+  s_id,
+  ROUND(AVG(s_score),2) AS 平均成绩
+FROM Score
+GROUP BY s_id
+HAVING ROUND(AVG(s_score),2) >= 60
+) as t
+JOIN Student as st
+  ON st.s_id = t.s_id
+  ```
 ## 查询在 Score 表存在成绩的学生信息
 ```sql
 select 
@@ -298,9 +357,55 @@ on st.s_id = t.s_id
 思路：求出每个学生有几门课程，和总课程相比较，当学生课程数小于总课程数则获取他的s_id和学了几门课程数，最后和学生表join，等到学生信息。  
 
 ## 查询至少有一门课与学号为" 01 "的同学所学相同的同学的信息
-
-查询和" 01 "号的同学学习的课程 完全相同的其他同学的信息
-
+```sql
+select * 
+from Student AS st 
+where st.s_id 
+in (
+-- 查询上过这几门课程的学生ID
+select s_id from Score where c_id 
+in(
+-- 查询学生01所学的所有课程,in(包含)
+ select c_id from Score where s_id = '01'
+    )
+)
+```
+## 查询和" 01 "号的同学学习的课程 完全相同的其他同学的信息
+```sql
+select st.* from Student AS st where st.s_id 
+in(
+  select 
+    s_id 
+  from Score 
+  where s_id!='01' 
+  and c_id in(select c_id from Score where s_id='01' )
+group by s_id 
+having count(c_id)=(select count(c_id) from Score where s_id='01'))
+```
+思路：  
+1. 查询学生 01上的课程ID 
+```sql
+select c_id from Score where s_id='01'    
+```
+2. 查询除了学生01，并且满足课程ID 在(select c_id from Score where s_id='01' )包含中。也就是查找除了学生01，而且满足上了三门课程任意一门课程的学生ID
+```sql
+  select  s_id from Score   
+  where s_id!='01'   
+  and c_id in(select c_id from Score where s_id='01' )  
+```
+3. 按学生ID分组
+```sql
+group by s_id
+```
+4. 查询学生01 课程的总数，如果其他的学生的课程总数与学生01 课程总数相等，则留下；其他不相等的就过滤掉。
+```sql
+having count(c_id)=(select count(c_id) from Score where s_id='01') 
+```
+5. 查询学生表，当学生表的学生ID 和 查出前四步查出的学生ID一样，则获取此学生id的信息。
+```sql
+select st.* from Student AS st where st.s_id 
+in(
+```
 ## 查询没学过"张三"老师讲授的任一门课程的学生姓名
 ```sql
 SELECT
@@ -324,7 +429,7 @@ RIGHT JOIN Student AS st
  ON st.s_id = t.s_id
 WHERE t.s_id IS NULL
 ```
-查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
+## 查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
 
 ## 检索" 01 "课程分数小于 60，按分数降序排列的学生信息
 ```sql
@@ -422,7 +527,16 @@ FROM (
 ) as t
 ORDER BY s_id
 ```
+学习：
+1. sum 函数
+2. UNION ALL 与 UNION 区别： UNION(或称为联合)的作用是将多个结果合并在一起显示出来。
 
+3. Union因为要进行重复值扫描，所以效率低。如果合并没有刻意要删除重复行，那么就使用Union All
+4. 两个要联合的SQL语句 字段个数必须一样，而且字段类型要“相容”（一致）；   
+
+5. Union：对两个结果集进行并集操作，不包括重复行，同时进行默认规则的排序；     
+
+6. Union All：对两个结果集进行并集操作，包括重复行，不进行排序；   
 ## 查询各科成绩最高分、最低分和平均分
 ```sql
 SELECT 
@@ -541,20 +655,3 @@ SELECT s_name FROM Student WHERE s_name like '%风%'
 
 ## 参考
 https://www.jianshu.com/p/476b52ee4f1b
-```sql
-SELECT
-	max(语文),
-	MAX(数学),
-  MAX(外语),
-  AVG(语文),
-  SUM(外语)
-from(
-	SELECT
-		s_id,
-		sum(case when c_id = '01' then s_score else 0 end) 语文,
-		sum(case when c_id = '02' then s_score else 0 end) 数学,
-		sum(case when c_id = '03' then s_score else 0 end) 外语
-	FROM Score 
-	GROUP BY s_id  
-) as t
-```
