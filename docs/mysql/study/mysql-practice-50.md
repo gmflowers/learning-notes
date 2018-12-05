@@ -995,6 +995,6 @@ from Student
 where MONTH(DATE_FORMAT(NOW(),'%Y%m%d'))+1 =MONTH(s_birth)
 ```
 ## 参考
-https://www.jianshu.com/p/476b52ee4f1b
-https://www.w3cschool.cn/mysql/func-date-format.html
-https://blog.csdn.net/qq_32041579/article/details/72927004
+https://www.jianshu.com/p/476b52ee4f1b  
+https://www.w3cschool.cn/mysql/func-date-format.html  
+https://blog.csdn.net/qq_32041579/article/details/72927004  
