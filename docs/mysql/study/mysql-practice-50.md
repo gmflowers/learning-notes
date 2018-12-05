@@ -334,6 +334,23 @@ join Student as st
   on t.s_id = st.s_id
 ```
 想法：得到张三老师下学生 id，去join学生表，得到需要的信息。  
+第三种做法：  
+```sql
+SELECT 
+	t.*,
+  st.s_name as s_name,
+  st.s_birth as s_birth,
+  st.s_sex as s_sex
+ FROM (
+		SELECT 
+			sc.s_id as s_id,
+      sc.s_score as s_score
+		FROM Score as sc, Course AS co, Teacher AS te
+		WHERE sc.c_id = co.c_id AND co.t_id = te.t_id AND te.t_name = '张三'
+) AS t
+JOIN Student AS st
+ON st.s_id = t.s_id
+```
 
 ## 查询没有学全所有课程的同学的信息
 ```sql
