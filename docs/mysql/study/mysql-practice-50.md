@@ -139,6 +139,7 @@ JOIN Student AS st
   ON st.s_id = t.s_id
 WHERE t.01_course > t.02_course
 ```
+
 ## 查询同时存在" 01 "课程和" 02 "课程的情况
 ```sql
 SELECT
@@ -168,6 +169,7 @@ GROUP BY s_id
 ) AS t
 WHERE 01_course IS not NULL 
 ```
+
 ## 查询平均成绩大于等于 60 分的同学的学生编号和学生姓名和平均成绩
 第一种做法：
 ```sql
@@ -214,7 +216,8 @@ HAVING ROUND(AVG(s_score),2) >= 60
 ) as t
 JOIN Student as st
   ON st.s_id = t.s_id
-  ```
+```
+
 ## 查询在 Score 表存在成绩的学生信息
 ```sql
 select 
@@ -308,7 +311,6 @@ join Teacher as te
   ON te.t_id = co.t_id
 WHERE te.t_name = '张三'
 ```
-
 第二种做法：  
 ```sql
 select
@@ -370,6 +372,7 @@ in(
     )
 )
 ```
+
 ## 查询和" 01 "号的同学学习的课程 完全相同的其他同学的信息
 ```sql
 select st.* from Student AS st where st.s_id 
@@ -406,6 +409,7 @@ having count(c_id)=(select count(c_id) from Score where s_id='01')
 select st.* from Student AS st where st.s_id 
 in(
 ```
+
 ## 查询没学过"张三"老师讲授的任一门课程的学生姓名
 ```sql
 SELECT
@@ -429,7 +433,11 @@ RIGHT JOIN Student AS st
  ON st.s_id = t.s_id
 WHERE t.s_id IS NULL
 ```
+
 ## 查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
+```sql
+
+```
 
 ## 检索" 01 "课程分数小于 60，按分数降序排列的学生信息
 ```sql
@@ -529,14 +537,17 @@ ORDER BY s_id
 ```
 学习：
 1. sum 函数
+
 2. UNION ALL 与 UNION 区别： UNION(或称为联合)的作用是将多个结果合并在一起显示出来。
 
 3. Union因为要进行重复值扫描，所以效率低。如果合并没有刻意要删除重复行，那么就使用Union All
+
 4. 两个要联合的SQL语句 字段个数必须一样，而且字段类型要“相容”（一致）；   
 
 5. Union：对两个结果集进行并集操作，不包括重复行，同时进行默认规则的排序；     
 
 6. Union All：对两个结果集进行并集操作，包括重复行，不进行排序；   
+
 ## 查询各科成绩最高分、最低分和平均分
 ```sql
 SELECT 
@@ -550,21 +561,79 @@ join Course as co
 GROUP BY sc.c_id
 ```
 
-以如下形式显示：课程 ID，课程 name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率
+## 以如下形式显示：课程 ID，课程 name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率,及格为: >=60，中等为：70-80，优良为：80-90，优秀为：>=90 , 要求输出课程号和选修人数，查询结果按人数降序排列，若人数相同，按课程号升序排列
+```SQL
+SELECT 
+  sc.c_id AS c_id, -- 课程ID
+  co.c_name AS 课程name,
+  MAX(sc.s_score) AS 最高分,
+  MIN(sc.s_score) AS 最低分,
+  ROUND(AVG(sc.s_score),2) AS 平均分,
+  ROUND(100*(SUM(CASE WHEN sc.s_score >= 60 THEN 1 ELSE 0 END)/SUM(1)),2) AS 及格率,
+  ROUND(100*(SUM(CASE WHEN sc.s_score >= 70 AND sc.s_score <= 80  THEN 1 ELSE 0 END)/SUM(1)),2) AS 中等率,
+  ROUND(100*(SUM(CASE WHEN sc.s_score >= 80 AND sc.s_score <= 90  THEN 1 ELSE 0 END)/SUM(1)),2) AS 优良率,
+  ROUND(100*(SUM(CASE WHEN sc.s_score >= 90 THEN 1 ELSE 0 END)/SUM(1)),2) AS 优秀率,
+  COUNT(sc.s_id) AS c_s_cnt
+FROM Score AS sc
+LEFT JOIN Course AS co
+ON sc.c_id = co.c_id
+GROUP BY sc.c_id, co.c_name
+ORDER BY c_s_cnt DESC, c_id ASC
+```
 
-及格为>=60，中等为：70-80，优良为：80-90，优秀为：>=90
+## 按各科成绩进行排序，并显示排名， Score 重复时保留名次空缺
+```sql
+select 
+  a.c_id, 
+  a.s_id, 
+  a.s_score, 
+  count(b.s_score)+1 as rank
+from Score as a 
+left join Score as b 
+on a.s_score < b.s_score and a.c_id = b.c_id
+group by a.c_id, a.s_id,a.s_score
+order by a.c_id, rank ASC;
+```
+##  按各科成绩进行排序，并显示排名， Score 重复时合并名次
 
-要求输出课程号和选修人数，查询结果按人数降序排列，若人数相同，按课程号升序排列
+## 查询学生的总成绩，并进行排名，总分重复时不保留名次空缺
+```sql
+set @crank=0;
+select 
+  q.s_id, 
+  q.s_score, 
+  @crank := @crank +1 as rank 
+from(
+	select 
+		sc.s_id, 
+		sum(s_score) as s_score 
+	 from Score as sc
+	group by s_id
+	order by s_score desc
+) AS q;
+```
 
-按各科成绩进行排序，并显示排名， Score 重复时保留名次空缺
-15.1 按各科成绩进行排序，并显示排名， Score 重复时合并名次
-
-查询学生的总成绩，并进行排名，总分重复时保留名次空缺
-16.1 查询学生的总成绩，并进行排名，总分重复时不保留名次空缺
-
-统计各科成绩各分数段人数：课程编号，课程名称，[100-85]，[85-70]，[70-60]，[60-0] 及所占百分比
-
-查询各科成绩前三名的记录
+## 查询各科成绩前三名的记录
+```sql
+SELECT
+  a.*
+FROM (
+		SELECT 
+			t.s_id,
+			t.s_score,
+			IF(@pa=t.c_id, @rownumber:=@rownumber+1, @rownumber:=1) AS rownumber,
+			@pa:=t.c_id AS c_id
+		from (
+				SELECT 
+					s_id,
+					c_id,
+					s_score
+				FROM Score
+				ORDER BY c_id ASC,s_score DESC
+		) AS t, (SELECT @pa:=0, @rownumber:=0 ) AS b
+		) AS a
+WHERE rownumber <= 3
+```
 
 ## 查询每门课程被选修的学生数
 ```sql
@@ -594,7 +663,8 @@ FROM (
 JOIN Student as st
   ON st.s_id = t.s_id
 ```
-查询男生、女生人数
+
+## 查询男生、女生人数
 ```sql
 SELECT 
   s_sex,
@@ -603,55 +673,311 @@ FROM
 Student
 GROUP BY s_sex
 ```
-查询名字中含有「风」字的学生信息
+
+## 查询名字中含有「风」字的学生信息
 ```sql
 SELECT s_name FROM Student WHERE s_name like '%风%'
 ```
-查询同名同性学生名单，并统计同名人数
 
-查询 1990 年出生的学生名单
+## 查询同名同性学生名单，并统计同名人数
+第一种方法：  
+```SQL
+select 
+  a.s_name,
+  a.s_sex,
+  count(*) 
+from Student a  
+JOIN Student b 
+on a.s_id !=b.s_id and a.s_name = b.s_name and a.s_sex = b.s_sex
+GROUP BY a.s_name,a.s_sex
+```
+第二种方法：  
+```SQL
+select 
+  a.s_name,
+  a.s_sex,
+  count(*) 
+from Student a  
+-- 只在一张表内查询，统计按照姓名性别分组，次数大于1，也就是存在同名同姓的情况
+GROUP BY a.s_name,a.s_sex
+HAVING count(*) > 1
+```
 
-查询每门课程的平均成绩，结果按平均成绩降序排列，平均成绩相同时，按课程编号升序排列
+## 查询 1990 年出生的学生名单
+```sql
+SELECT s_name FROM Student WHERE s_birth LIKE '1990%'
+```
 
-查询平均成绩大于等于 85 的所有学生的学号、姓名和平均成绩
+## 查询每门课程的平均成绩，结果按平均成绩降序排列，平均成绩相同时，按课程编号升序排列
+```sql
+SELECT
+  c_id,
+  ROUND(AVG(s_score),2) AS s_score_avg
+FROM Score
+GROUP BY c_id
+ORDER BY s_score_avg DESC, c_id ASC
+```
 
-查询课程名称为「数学」，且分数低于 60 的学生姓名和分数
+## 查询平均成绩大于等于 85 的所有学生的学号、姓名和平均成绩
+```sql
+SELECT
+ s_name,
+ t.*
+FROM (
+SELECT
+  s_id,
+  ROUND(AVG(s_score),2) as 平均成绩
+FROM Score
+GROUP BY s_id
+HAVING ROUND(AVG(s_score),2) > 85
+) AS t
+JOIN Student AS st
+ON st.s_id = t.s_id 
+```
 
-查询所有学生的课程及分数情况（存在学生没成绩，没选课的情况）
+## 查询课程名称为「数学」，且分数低于 60 的学生姓名和分数
+```sql
+SELECT
+  s_name,
+  数学
+FROM (
+SELECT 
+  s_id,
+  SUM(CASE WHEN c_id = '02' THEN s_score ELSE 0 END) AS 数学
+FROM Score
+GROUP BY s_id
+HAVING 数学 < 60
+) AS t
+JOIN Student AS st
+ON t.s_id = st.s_id
+```
 
-查询任何一门课程成绩在 70 分以上的姓名、课程名称和分数
+## 查询所有学生的课程及分数情况（存在学生没成绩，没选课的情况）
+```sql
+SELECT
+  st.*,
+  t.chinese,
+  t.math,
+  t.english
+FROM (
+  SELECT
+    s_id,
+    SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) AS chinese,
+    SUM(CASE WHEN c_id = '02' THEN s_score ELSE 0 END) AS math,
+    SUM(CASE WHEN c_id = '03' THEN s_score ELSE 0 END) AS english
+  FROM Score
+  GROUP BY s_id
+) as t
+RIGHT JOIN Student AS st
+ON st.s_id = t.s_id
+```
 
-查询不及格的课程
+## 查询任何一门课程成绩在 70 分以上的姓名、课程名称和分数
+```sql
+SELECT
+  s_id,
+  SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) AS chinese,
+  SUM(CASE WHEN c_id = '02' THEN s_score ELSE 0 END) AS math,
+  SUM(CASE WHEN c_id = '03' THEN s_score ELSE 0 END) AS english
+FROM Score
+GROUP BY s_id
+HAVING SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) > 70 
+	and SUM(CASE WHEN c_id = '02' THEN s_score ELSE 0 END) > 70 
+	and SUM(CASE WHEN c_id = '03' THEN s_score ELSE 0 END) > 70
+```
 
-查询课程编号为 01 且课程成绩在 80 分以上的学生的学号和姓名
+## 查询不及格的课程
+```sql
+SELECT
+  s_id,
+  SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) AS chinese,
+  SUM(CASE WHEN c_id = '02' THEN s_score ELSE 0 END) AS math,
+  SUM(CASE WHEN c_id = '03' THEN s_score ELSE 0 END) AS english
+FROM Score
+GROUP BY s_id
+-- having后只能跟聚合函数（多进一出），在这里可用 chinese math english 代替，因为上面命名，可直接拿来使用。
+HAVING SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) < 60
+	and SUM(CASE WHEN c_id = '02' THEN s_score ELSE 0 END) < 60 
+	and SUM(CASE WHEN c_id = '03' THEN s_score ELSE 0 END) < 60
+```
 
-求每门课程的学生人数
+## 查询课程编号为 01 且课程成绩在 80 分以上的学生的学号和姓名
+```sql
+SELECT
+  s_id,
+  SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) AS chinese
+FROM Score
+GROUP BY s_id
+-- 没有大于80的学生，数据为空
+HAVING SUM(CASE WHEN c_id = '01' THEN s_score ELSE 0 END) > 80
+```
 
-成绩不重复，查询选修「张三」老师所授课程的学生中，成绩最高的学生信息及其成绩
+## 求每门课程的学生人数
+```sql
+SELECT 
+  c_id,
+  COUNT(*)
+FROM Score
+GROUP BY c_id
+```
 
-成绩有重复的情况下，查询选修「张三」老师所授课程的学生中，成绩最高的学生信息及其成绩
+## 成绩不重复，查询选修「张三」老师所授课程的学生中，成绩最高的学生信息及其成绩
+```sql
+SELECT
+  st.*,
+  t.s_score
+FROM(
+SELECT 
+	* 
+  -- 查询出课程为02，成绩最大的学生id 及成绩
+from  Score 
+-- 在成绩表中课程为02 且 成绩是最大的成绩（如果最大成绩为90，那会出现两个90的成绩）
+where c_id = '02' and s_score =
+ -- 查询课程02最大的成绩
+ (SELECT MAX(s_score) from Score WHERE c_id = '02' )
+)AS t
+JOIN Student AS st
+on st.s_id = t.s_id
+```
 
-查询不同课程成绩相同的学生的学生编号、课程编号、学生成绩
+## 查询不同课程成绩相同的学生的学生编号、课程编号、学生成绩
+```sql
+SELECT 
+  DISTINCT a.s_id,
+  a.c_id,
+  a.s_score
+FROM Score AS a, Score AS b
+WHERE  a.s_score = b.s_score AND a.c_id != b.c_id
+ORDER BY c_id
+```
+思路：FROM···WHERE 相当于join···on    
 
-查询每门功成绩最好的前两名
+## 查询每门功成绩最好的前两名
+```sql
+SELECT
+	t.c_id,
+	t.s_id,
+	st.s_name,
+	t.s_score,
+	t.row_number
+from (
+	select
+		c_id,
+		s_id,
+		s_score,
+		if(@pc=t.c_id, @rn:=@rn+1, @rn:=1) as row_number, -- 行号
+    -- 如果@pc=t.c_id，则执行@rn:=@rn+1，否知执行@rn:=1， 重名为row_number
+		-- if(@pc=t.c_id and @s=t.s_score, @rc:=@rc, @rc:=@rc+1) as rank,
+		-- row_number(partition(分割; 分开，隔开; 区分) by c_id, order by s_score) as row_number
+		@pc:=t.c_id
+    -- @s:=t.s_score
+	-- select *
+	from (
+    -- 查询成绩表，按课程号升序，学生成绩倒叙排列
+		select
+			c_id,
+			s_id,
+			s_score
+		from Score
+		ORDER BY c_id asc, s_score desc
+	) as t, (select @rn:=0, @pc:=0) as b
+   -- 初始化几个值
+	-- ) as t, (select @rn:=0, @rc:=0, @pc:=0, @s:=0) as b
+) as t
+-- 得到学生的信息
+join Student as st
+	on t.s_id = st.s_id
+where row_number <= 2
+ORDER BY t.c_id asc, t.row_number asc
+```
 
-统计每门课程的学生选修人数（超过 5 人的课程才统计）。
+## 统计每门课程的学生选修人数（超过 5 人的课程才统计）。
+```sql
+SELECT 
+  c_id,
+  COUNT(c_id) AS s_cnt
+FROM Score
+GROUP BY c_id
+HAVING COUNT(c_id) > 5
+```
+或者
+```sql
+SELECT 
+  c_id,
+  COUNT(*) AS s_cnt
+FROM Score
+GROUP BY c_id
+HAVING COUNT(*) > 5
+```
 
-检索至少选修两门课程的学生学号
+## 检索至少选修两门课程的学生学号
+```sql
+select 
+  s_id,
+  count(c_id) as sel 
+from Score 
+GROUP BY s_id 
+HAVING sel>=2
+```
 
-查询选修了全部课程的学生信息
+## 查询选修了全部课程的学生信息
+```sql
+select * 
+from Student 
+where s_id in(     
+  -- 按学生ID分组，查询课程数等于全部课程数的学生ID   
+   select s_id from Score GROUP BY s_id 
+   HAVING count(*)=
+   -- 查询全部课程数
+   (select count(*) from Course))
+```
 
-查询各学生的年龄，只按年份来算
+## 查询各学生的年龄，只按年份来算
+```sql
+SELECT 
+  s_name,
+  s_birth,
+  (DATE_FORMAT(NOW(),'%Y')) - DATE_FORMAT(s_birth,'%Y')  AS age
+ FROM Student    
+```
 
-按照出生日期来算，当前月日 < 出生年月的月日则，年龄减一
+## 按照出生日期来算，当前月日 < 出生年月的月日则，年龄减一
+```SQL
+SELECT 
+  s_name,
+  s_birth,
+  (DATE_FORMAT(NOW(),'%Y')) - DATE_FORMAT(s_birth,'%Y') - (CASE WHEN DATE_FORMAT(NOW(),'%m%d') > DATE_FORMAT(s_birth,'%m%d') THEN 0 ELSE 1 END) AS age
+ FROM Student 
+```
 
-查询本周过生日的学生
+## 查询本周过生日的学生
+```SQL
+select * 
+from Student 
+where WEEK(DATE_FORMAT(NOW(),'%Y%m%d'))=WEEK(s_birth)
+```
 
-查询下周过生日的学生
+## 查询下周过生日的学生
+```SQL
+select * 
+from Student 
+where WEEK(DATE_FORMAT(NOW(),'%Y%m%d'))+1 =WEEK(s_birth)
+```
 
-查询本月过生日的学生
+## 查询本月过生日的学生
+```SQL
+select * 
+from Student 
+where MONTH(DATE_FORMAT(NOW(),'%Y%m%d')) =MONTH(s_birth)
+```
 
-查询下月过生日的学生
-
+## 查询下月过生日的学生
+```SQL
+select * 
+from Student 
+where MONTH(DATE_FORMAT(NOW(),'%Y%m%d'))+1 =MONTH(s_birth)
+```
 ## 参考
 https://www.jianshu.com/p/476b52ee4f1b
+https://www.w3cschool.cn/mysql/func-date-format.html
+https://blog.csdn.net/qq_32041579/article/details/72927004
