@@ -994,8 +994,8 @@ select *
 from Student 
 where MONTH(DATE_FORMAT(NOW(),'%Y%m%d'))+1 =MONTH(s_birth)
 ```
+## 7查询每个学生最好的成绩
 ```SQL
--- 7查询每个学生最好的成绩
 SELECT
 	a.s_name,
 	CASE WHEN a.sed > a.yy THEN a.sed ELSE a.yy END AS zuida
