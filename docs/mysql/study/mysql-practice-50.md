@@ -994,6 +994,30 @@ select *
 from Student 
 where MONTH(DATE_FORMAT(NOW(),'%Y%m%d'))+1 =MONTH(s_birth)
 ```
+```SQL
+-- 7查询每个学生最好的成绩
+SELECT
+	a.s_name,
+	CASE WHEN a.sed > a.yy THEN a.sed ELSE a.yy END AS zuida
+FROM(
+	SELECT
+		s_name,
+		CASE WHEN yw >sx THEN yw ELSE sx END AS sed,
+		yy
+	FROM(
+		select
+			s.s_name as s_name,
+			SUM(CASE when s1.c_id = '01' THEN s1.s_score ELSE 0 END) AS yw,
+			SUM(CASE when s1.c_id = '02' THEN s1.s_score ELSE 0 END) AS sx,
+			SUM(CASE when s1.c_id = '03' THEN s1.s_score ELSE 0 END) AS yy
+		FROM
+			Student AS s
+		JOIN Score AS s1
+		ON s.s_id = s1.s_id
+		GROUP BY s.s_name
+	) AS sc
+) AS a;
+```
 ## 参考
 https://www.jianshu.com/p/476b52ee4f1b  
 https://www.w3cschool.cn/mysql/func-date-format.html  
